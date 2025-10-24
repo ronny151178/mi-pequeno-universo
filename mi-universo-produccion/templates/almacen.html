@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almacén - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA ALMACÉN - NO afectan otras páginas */
+        .almacen-tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.3s ease;
+        }
+        .almacen-tab-btn:hover {
+            color: #3b82f6;
+            background: #f8fafc;
+        }
+        .almacen-tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        .almacen-tab-content {
+            display: none;
+        }
+        .almacen-tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+   
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen" class="active">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+       
+        <div class="content">
+            <div class="card">
+                <h1>📦 Gestión de Almacén</h1>
+                <p>Control de útiles, materiales y bienes del aula</p>
+               
+                <!-- Pestañas -->
+                <div class="tabs">
+                    <button class="almacen-tab-btn active" onclick="openAlmacenTab('utiles')">📚 Útiles Escolares</button>
+                    <button class="almacen-tab-btn" onclick="openAlmacenTab('materiales')">📦 Materiales del Aula</button>
+                    <button class="almacen-tab-btn" onclick="openAlmacenTab('bienes')">🪑 Bienes del Aula</button>
+                </div>
+               
+                <!-- Contenido de pestañas -->
+                <div id="utiles" class="almacen-tab-content active">
+                    {% include 'almacen_utiles.html' %}
+                </div>
+               
+                <div id="materiales" class="almacen-tab-content">
+                    {% include 'almacen_materiales.html' %}
+               </div>
+               
+                <div id="bienes" class="almacen-tab-content">
+                    {% include 'almacen_bienes.html' %}
+               </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openAlmacenTab(tabName) {
+            // Ocultar todos los contenidos de pestañas
+            const tabContents = document.getElementsByClassName('almacen-tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+           
+            // Desactivar todos los botones de pestañas
+            const tabBtns = document.getElementsByClassName('almacen-tab-btn');
+            for (let i = 0; i < tabBtns.length; i++) {
+                tabBtns[i].classList.remove('active');
+            }
+           
+            // Activar la pestaña seleccionada
+            document.getElementById(tabName).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>

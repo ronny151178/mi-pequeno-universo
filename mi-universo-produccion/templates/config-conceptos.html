@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conceptos de Pago - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+    
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos" class="active">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h1>💰 Conceptos de Pago</h1>
+                <p>Define los conceptos de pago para tu institución (matrículas, mensualidades, etc.)</p>
+                
+                <form class="config-form" id="conceptForm">
+                    <div class="form-group">
+                        <label>Nombre del Concepto</label>
+                        <input type="text" id="name" placeholder="Ej: Matrícula, Mensualidad, Materiales, etc." required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Descripción</label>
+                        <textarea id="description" placeholder="Descripción del concepto..." rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Monto (S/)</label>
+                        <input type="number" id="amount" step="0.01" placeholder="0.00" min="0" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Frecuencia</label>
+                        <select id="frequency" required>
+                            <option value="único">Pago Único</option>
+                            <option value="mensual" selected>Mensual</option>
+                            <option value="trimestral">Trimestral</option>
+                            <option value="anual">Anual</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="/dashboard" class="btn btn-outline">← Volver al Dashboard</a>
+                        <button type="submit" class="btn btn-success">✅ Guardar Concepto</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Conceptos Configurados</h2>
+                <div class="items-list" id="conceptsList">
+                    <div class="empty-state">
+                        <div class="icon">💰</div>
+                        <p>No hay conceptos de pago configurados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar conceptos existentes
+        async function loadPaymentConcepts() {
+            try {
+                const response = await fetch('/api/payment-concepts');
+                const concepts = await response.json();
+                
+                const conceptsList = document.getElementById('conceptsList');
+                
+                if (concepts.length === 0) {
+                    conceptsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">💰</div>
+                            <p>No hay conceptos de pago configurados</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                concepts.forEach(concept => {
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <h4>${concept.name}</h4>
+                                <p>${concept.description || 'Sin descripción'}</p>
+                                <div style="display: flex; gap: 2rem; margin-top: 8px;">
+                                    <span><strong>Monto:</strong> S/ ${concept.amount}</span>
+                                    <span><strong>Frecuencia:</strong> ${concept.frequency}</span>
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <span style="color: green;">✅ Activo</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                conceptsList.innerHTML = html;
+            } catch (error) {
+                console.log('Error cargando conceptos:', error);
+            }
+        }
+        
+        // Guardar concepto
+        document.getElementById('conceptForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const conceptData = {
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value,
+                amount: parseFloat(document.getElementById('amount').value),
+                frequency: document.getElementById('frequency').value
+            };
+            
+            try {
+                const response = await fetch('/api/payment-concepts', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(conceptData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Concepto de pago guardado correctamente');
+                    loadPaymentConcepts();
+                    document.getElementById('conceptForm').reset();
+                }
+            } catch (error) {
+                alert('❌ Error al guardar concepto de pago');
+            }
+        });
+        
+        loadPaymentConcepts();
+    </script>
+</body>
+</html>

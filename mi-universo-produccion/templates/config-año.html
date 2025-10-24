@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Año Escolar - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+    
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año" class="active">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h1>📅 Configurar Año Escolar</h1>
+                <p>Define el período académico para tu institución</p>
+                
+                <form class="config-form" id="yearForm">
+                    <div class="form-group">
+                        <label>Año Escolar</label>
+                        <input type="text" id="year" placeholder="Ej: 2025" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Fecha de Inicio</label>
+                        <input type="date" id="startDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Fecha de Fin</label>
+                        <input type="date" id="endDate" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <a href="/dashboard" class="btn btn-outline">← Volver</a>
+                        <button type="submit" class="btn btn-success">✅ Guardar Año Escolar</button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="card">
+                <h2>Años Escolares Configurados</h2>
+                <div class="items-list" id="yearsList">
+                    <div class="empty-state">
+                        <div class="icon">📅</div>
+                        <p>No hay años escolares configurados</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Establecer fechas por defecto
+        const today = new Date();
+        const nextYear = new Date(today.getFullYear() + 1, today.getMonth(), today.getDate());
+        
+        document.getElementById('year').value = `${today.getFullYear()}`;
+        document.getElementById('startDate').value = today.toISOString().split('T')[0];
+        document.getElementById('endDate').value = nextYear.toISOString().split('T')[0];
+        
+        // Cargar años existentes
+        async function loadSchoolYears() {
+            try {
+                const response = await fetch('/api/school-years');
+                const years = await response.json();
+                
+                const yearsList = document.getElementById('yearsList');
+                
+                if (years.length === 0) {
+                    yearsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="icon">📅</div>
+                            <p>No hay años escolares configurados</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let html = '';
+                years.forEach(year => {
+                    html += `
+                        <div class="list-item">
+                            <div class="list-item-content">
+                                <h4>${year.year}</h4>
+                                <p>${year.start_date} al ${year.end_date}</p>
+                            </div>
+                            <div class="list-item-actions">
+                                <span style="color: green;">✅ Activo</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                yearsList.innerHTML = html;
+            } catch (error) {
+                console.log('Error cargando años escolares:', error);
+            }
+        }
+        
+        // Guardar año escolar
+        document.getElementById('yearForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const yearData = {
+                year: document.getElementById('year').value,
+                start_date: document.getElementById('startDate').value,
+                end_date: document.getElementById('endDate').value
+            };
+            
+            try {
+                const response = await fetch('/api/school-years', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(yearData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Año escolar guardado correctamente');
+                    loadSchoolYears();
+                    document.getElementById('yearForm').reset();
+                    
+                    // Restablecer valores por defecto
+                    document.getElementById('year').value = `${today.getFullYear()}`;
+                    document.getElementById('startDate').value = today.toISOString().split('T')[0];
+                    document.getElementById('endDate').value = nextYear.toISOString().split('T')[0];
+                }
+            } catch (error) {
+                alert('❌ Error al guardar año escolar');
+            }
+        });
+        
+        loadSchoolYears();
+    </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagos - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+    
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos" class="active">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+        
+        <div class="content">
+            <!-- Formulario de Pago -->
+            <div class="card">
+                <h2>Registrar Pago</h2>
+                <form id="paymentForm">
+                    <div class="form-group">
+                        <label for="studentSelect">Estudiante *</label>
+                        <select id="studentSelect" required>
+                            <option value="">Seleccionar estudiante...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="conceptSelect">Concepto de Pago *</label>
+                        <select id="conceptSelect" required>
+                            <option value="">Seleccionar concepto...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="amount">Monto *</label>
+                        <input type="number" step="0.01" id="amount" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="paymentDate">Fecha de Pago *</label>
+                        <input type="date" id="paymentDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dueDate">Fecha de Vencimiento *</label>
+                        <input type="date" id="dueDate" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Registrar Pago</button>
+                </form>
+            </div>
+            
+            <!-- Lista de Pagos -->
+            <div class="card">
+                <h2>Historial de Pagos</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>Concepto</th>
+                                <th>Monto</th>
+                                <th>Fecha Pago</th>
+                                <th>Recibo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="paymentsTable">
+                            <!-- Los pagos se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar estudiantes matriculados
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students/enrolled');
+                const students = await response.json();
+                
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.name} (${student.dni}) - ${student.classroom}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando estudiantes:', error);
+            }
+        }
+
+        // Cargar conceptos de pago
+        async function loadConcepts() {
+            try {
+                const response = await fetch('/api/payment-concepts');
+                const concepts = await response.json();
+                
+                const select = document.getElementById('conceptSelect');
+                select.innerHTML = '<option value="">Seleccionar concepto...</option>';
+                
+                concepts.forEach(concept => {
+                    const option = document.createElement('option');
+                    option.value = concept.id;
+                    option.textContent = `${concept.name} - S/. ${concept.amount}`;
+                    option.setAttribute('data-amount', concept.amount);
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando conceptos:', error);
+            }
+        }
+
+        // Cargar pagos registrados
+        async function loadPayments() {
+            try {
+                const response = await fetch('/api/payments');
+                const payments = await response.json();
+                
+                const tbody = document.getElementById('paymentsTable');
+                
+                if (payments.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">No hay pagos registrados</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                payments.forEach(payment => {
+                    const pagoFecha = payment.payment_date.split('-').reverse().join('/');
+                    
+                    html += `
+                        <tr>
+                            <td>${payment.student_name}</td>
+                            <td>${payment.concept_name}</td>
+                            <td>S/. ${payment.amount}</td>
+                            <td>${pagoFecha}</td>
+                            <td>${payment.receipt_number}</td>
+                            <td>
+                                <button class="btn btn-sm" onclick="generateReceipt(${payment.id})">
+                                    📄 Comprobante
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                tbody.innerHTML = html;
+            } catch (error) {
+                document.getElementById('paymentsTable').innerHTML = 
+                    '<tr><td colspan="6">Error al cargar pagos</td></tr>';
+            }
+        }
+
+        // Auto-completar monto cuando seleccionen concepto
+        document.getElementById('conceptSelect').addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value) {
+                document.getElementById('amount').value = selectedOption.getAttribute('data-amount');
+            }
+        });
+
+        // Generar comprobante
+        async function generateReceipt(paymentId) {
+            try {
+                const response = await fetch(`/api/payments/${paymentId}/receipt`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const receipt = result.receipt;
+                    
+                    const params = new URLSearchParams({
+                        receipt_number: receipt.receipt_number,
+                        student_name: receipt.student_name,
+                        student_dni: receipt.student_dni,
+                        concept_name: receipt.concept_name,
+                        amount: receipt.amount,
+                        payment_date: receipt.payment_date,
+                        due_date: receipt.due_date,
+                        status: receipt.status,
+                        current_date: receipt.current_date
+                    });
+                    
+                    window.open(
+                        `/comprobante-pago?${params}`,
+                        '_blank',
+                        'width=900,height=700,scrollbars=yes'
+                    );
+                } else {
+                    alert('Error al generar comprobante: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error al generar el comprobante');
+            }
+        }
+
+        // Manejar envío del formulario
+        document.getElementById('paymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('studentSelect').value;
+            const conceptId = document.getElementById('conceptSelect').value;
+            const amount = document.getElementById('amount').value;
+            const paymentDate = document.getElementById('paymentDate').value;
+            const dueDate = document.getElementById('dueDate').value;
+            
+            if (!studentId || !conceptId || !amount || !paymentDate || !dueDate) {
+                alert('Por favor complete todos los campos requeridos');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/payments', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        student_id: parseInt(studentId),
+                        concept_id: parseInt(conceptId),
+                        amount: parseFloat(amount),
+                        payment_date: paymentDate,
+                        due_date: dueDate
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Pago registrado exitosamente\n📄 Recibo: ${result.receipt_number}`);
+                    loadPayments();
+                    document.getElementById('paymentForm').reset();
+                    
+                    // Restablecer fechas
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('paymentDate').value = today;
+                    
+                    const due = new Date();
+                    due.setDate(due.getDate() + 30);
+                    document.getElementById('dueDate').value = due.toISOString().split('T')[0];
+                    
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        });
+
+        // Cargar todo al iniciar
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('paymentDate').value = today;
+            
+            const dueDate = new Date();
+            dueDate.setDate(dueDate.getDate() + 30);
+            document.getElementById('dueDate').value = dueDate.toISOString().split('T')[0];
+            
+            loadStudents();
+            loadConcepts();
+            loadPayments();
+        });
+
+        // Hacer función global
+        window.generateReceipt = generateReceipt;
+    </script>
+</body>
+</html>
