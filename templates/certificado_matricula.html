@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constancia de Matrícula - Mi Pequeño Universo</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .certificate-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border: 3px solid #2c3e50;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 28px;
+        }
+        .header h2 {
+            color: #3498db;
+            margin: 5px 0;
+            font-size: 20px;
+        }
+        .content {
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+        .student-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .info-item {
+            margin-bottom: 10px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+        }
+        .signature-area {
+            margin-top: 60px;
+            text-align: center;
+        }
+        .signature-line {
+            width: 300px;
+            border-top: 1px solid #000;
+            margin: 0 auto;
+            padding-top: 30px;
+        }
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .certificate-container {
+                border: none;
+                box-shadow: none;
+                padding: 20px;
+            }
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="header">
+            <h1>MI PEQUEÑO UNIVERSO</h1>
+            <h2>Constancia de Matrícula</h2>
+        </div>
+        
+        <div class="content">
+            <p>Por medio de la presente se hace constar que:</p>
+            
+            <div class="student-info">
+                <div class="info-item">
+                    <span class="info-label">Estudiante:</span> 
+                    <span id="studentName"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">DNI:</span> 
+                    <span id="studentDni"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha de Nacimiento:</span> 
+                    <span id="studentBirthDate"></span>
+                </div>
+            </div>
+            
+            <p>Se encuentra <strong>oficialmente matriculado(a)</strong> en nuestra institución educativa para el año lectivo en curso, en el siguiente grado:</p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Aula/Grado:</span> 
+                    <span id="classroomName"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Rango de Edad:</span> 
+                    <span id="ageRange"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha de Matrícula:</span> 
+                    <span id="enrollmentDate"></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Código de Matrícula:</span> 
+                    <span id="enrollmentId"></span>
+                </div>
+            </div>
+            
+            <p>Esta constancia se expide a solicitud del interesado para los fines que estime convenientes.</p>
+        </div>
+        
+        <div class="footer">
+            <div class="signature-area">
+                <div class="signature-line"></div>
+                <p>Dirección Administrativa<br>Mi Pequeño Universo</p>
+            </div>
+            
+            <p><strong>Fecha de emisión:</strong> <span id="currentDate"></span></p>
+            
+            <div class="no-print" style="margin-top: 20px;">
+                <button onclick="window.print()" style="
+                    background: #3498db;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                ">
+                    🖨️ Imprimir Constancia
+                </button>
+                <button onclick="window.close()" style="
+                    background: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    margin-left: 10px;
+                ">
+                    ❌ Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cargar datos desde los parámetros URL
+        function loadCertificateData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            document.getElementById('studentName').textContent = urlParams.get('student_name') || 'N/A';
+            document.getElementById('studentDni').textContent = urlParams.get('student_dni') || 'N/A';
+            document.getElementById('studentBirthDate').textContent = urlParams.get('student_birth_date') || 'N/A';
+            document.getElementById('classroomName').textContent = urlParams.get('classroom_name') || 'N/A';
+            document.getElementById('ageRange').textContent = urlParams.get('classroom_age_range') || 'N/A';
+            document.getElementById('enrollmentDate').textContent = urlParams.get('enrollment_date') || 'N/A';
+            document.getElementById('enrollmentId').textContent = 'MAT-' + (urlParams.get('enrollment_id') || 'N/A');
+            document.getElementById('currentDate').textContent = urlParams.get('current_date') || 'N/A';
+        }
+
+        // Cargar datos cuando la página esté lista
+        document.addEventListener('DOMContentLoaded', loadCertificateData);
+    </script>
+</body>
+</html>

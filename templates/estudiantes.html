@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estudiantes - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+   
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes" class="active">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+       
+        <div class="content">
+            <!-- LISTA DE ESTUDIANTES (visible por defecto) -->
+            <div class="card" id="listaEstudiantesCard">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                    <div>
+                        <h1>👥 Gestión de Estudiantes</h1>
+                        <p>Administra la información completa de los estudiantes</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="showStudentForm()">➕ Nuevo Estudiante</button>
+                </div>
+                <!-- Lista de Estudiantes -->
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>DNI</th>
+                                <th>Apellidos y Nombres</th>
+                                <th>Edad</th>
+                                <th>Teléfono</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTable">
+                            <tr><td colspan="6">Cargando estudiantes...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- FORMULARIO DE ESTUDIANTE (oculto inicialmente) -->
+            <div class="card" id="studentFormCard" style="display: none;">
+                <h2>📝 <span id="formTitle">Registrar Nuevo Estudiante</span></h2>
+               
+                <!-- TABS -->
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchStudentTab(1)">👤 Datos del Alumno</button>
+                    <button class="tab-btn" onclick="switchStudentTab(2)">👨‍👩‍👧‍👦 Datos de los Padres</button>
+                    <button class="tab-btn" onclick="switchStudentTab(3)">🏥 Datos Médicos</button>
+                </div>
+               
+                <!-- CONTENIDO DE TABS -->
+                <form id="newStudentForm">
+                    <input type="hidden" id="studentId" value="">
+                    
+                    <!-- TAB 1: DATOS DEL ALUMNO -->
+                    <div class="tab-content-container">
+                        <div class="tab-pane-estudiante active" id="studentTab1">
+                            <div class="form-section">
+                                <h3>📋 Información Personal</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="field-required">Apellidos</label>
+                                        <input type="text" id="lastName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Nombres</label>
+                                        <input type="text" id="firstName" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">DNI</label>
+                                        <input type="text" id="dni" maxlength="8" required>
+                                        <div class="field-info">8 dígitos sin espacios</div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Fecha de Nacimiento</label>
+                                        <input type="date" id="birthDate" required onchange="calculateAge()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Edad</label>
+                                        <input type="text" id="age" class="calculated-field" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Género</label>
+                                        <select id="gender" required>
+                                            <option value="">Seleccionar...</option>
+                                            <option value="masculino">Masculino</option>
+                                            <option value="femenino">Femenino</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Nacionalidad</label>
+                                        <input type="text" id="nationality" value="Peruana">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>📞 Información de Contacto</h3>
+                                <div class="form-grid">
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label class="field-required">Dirección</label>
+                                        <textarea id="address" rows="3" required></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Teléfono de Referencia</label>
+                                        <input type="tel" id="phone" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" id="email">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>📷 Foto del Alumno</h3>
+                                <div class="photo-upload" onclick="document.getElementById('photoInput').click()">
+                                    <div class="photo-placeholder">👤</div>
+                                    <img id="photoPreview" class="photo-preview" alt="Vista previa">
+                                    <p>Haz clic para subir una foto</p>
+                                    <input type="file" id="photoInput" accept="image/*" style="display: none;" onchange="previewPhoto(event)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: DATOS DE LOS PADRES -->
+                        <div class="tab-pane-estudiante" id="studentTab2">
+                            <div class="form-section">
+                                <h3>👨 Información del Padre</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="field-required">Apellidos y Nombres</label>
+                                        <input type="text" id="fatherNames" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">DNI</label>
+                                        <input type="text" id="fatherDni" maxlength="8" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha de Nacimiento</label>
+                                        <input type="date" id="fatherBirthDate">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Teléfono</label>
+                                        <input type="tel" id="fatherPhone" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" id="fatherEmail">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ocupación</label>
+                                        <input type="text" id="fatherOccupation">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>👩 Información de la Madre</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="field-required">Apellidos y Nombres</label>
+                                        <input type="text" id="motherNames" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">DNI</label>
+                                        <input type="text" id="motherDni" maxlength="8" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Fecha de Nacimiento</label>
+                                        <input type="date" id="motherBirthDate">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Teléfono</label>
+                                        <input type="tel" id="motherPhone" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Email</label>
+                                        <input type="email" id="motherEmail">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Ocupación</label>
+                                        <input type="text" id="motherOccupation">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>🚨 Contacto de Emergencia</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label class="field-required">Nombre del Contacto</label>
+                                        <input type="text" id="emergencyContact" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Parentesco</label>
+                                        <input type="text" id="emergencyRelationship" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="field-required">Teléfono</label>
+                                        <input type="tel" id="emergencyPhone" required>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Dirección</label>
+                                        <textarea id="emergencyAddress" rows="2"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TAB 3: DATOS MÉDICOS -->
+                        <div class="tab-pane-estudiante" id="studentTab3">
+                            <div class="form-section">
+                                <h3>🩺 Información Médica Básica</h3>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Tipo de Sangre</label>
+                                        <select id="bloodType">
+                                            <option value="">Seleccionar...</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Estatura (cm)</label>
+                                        <input type="number" id="height" step="0.1" onchange="calculateBMI()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Peso (kg)</label>
+                                        <input type="number" id="weight" step="0.1" onchange="calculateBMI()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>IMC</label>
+                                        <input type="text" id="bmi" class="calculated-field" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Seguro Médico</label>
+                                        <input type="text" id="medicalInsurance">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>⚠️ Alergias y Medicamentos</h3>
+                                <div class="form-grid">
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Alergias Conocidas</label>
+                                        <textarea id="allergies" rows="3" placeholder="Ej: Alergia a penicilina, polvo, etc."></textarea>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Medicamentos que Toma Regularmente</label>
+                                        <textarea id="medications" rows="3" placeholder="Ej: Vitamina D, inhalador, etc."></textarea>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Condiciones Médicas Especiales</label>
+                                        <textarea id="medicalConditions" rows="3" placeholder="Ej: Asma, diabetes, etc."></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-section">
+                                <h3>📝 Observaciones Médicas</h3>
+                                <div class="form-grid">
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Restricciones de Actividad Física</label>
+                                        <textarea id="activityRestrictions" rows="2" placeholder="Ej: No puede correr largas distancias, etc."></textarea>
+                                    </div>
+                                    <div class="form-group" style="grid-column: 1 / -1;">
+                                        <label>Observaciones Adicionales</label>
+                                        <textarea id="medicalObservations" rows="3"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Vacunas al Día</label>
+                                        <label class="switch">
+                                            <input type="checkbox" id="vaccinesUpToDate" checked>
+                                            <span class="slider"></span>
+                                        </label>
+                                        <div class="field-info">Deslizar para cambiar</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div class="form-actions">
+                        <div>
+                            <button type="button" class="btn btn-outline" onclick="hideStudentForm()">← Volver a la lista</button>
+                        </div>
+                        <div style="display: flex; gap: 1rem;">
+                            <button type="button" class="btn btn-outline" onclick="resetForm()">🔄 Limpiar Formulario</button>
+                            <button type="submit" class="btn btn-success" id="submitButton">💾 Guardar Estudiante</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let currentStudentTab = 1;
+        let isEditing = false;
+        let currentStudentId = null;
+
+        // Mostrar/ocultar formulario
+        function showStudentForm() {
+            document.getElementById('studentFormCard').style.display = 'block';
+            document.getElementById('listaEstudiantesCard').style.display = 'none';
+            resetForm();
+            isEditing = false;
+            document.getElementById('formTitle').textContent = 'Registrar Nuevo Estudiante';
+            document.getElementById('submitButton').textContent = '💾 Guardar Estudiante';
+        }
+
+        function hideStudentForm() {
+            document.getElementById('studentFormCard').style.display = 'none';
+            document.getElementById('listaEstudiantesCard').style.display = 'block';
+        }
+
+        // Sistema de tabs para estudiantes
+        function switchStudentTab(tabNumber) {
+            // Ocultar todas las tabs
+            document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-pane-estudiante').forEach(pane => pane.classList.remove('active'));
+           
+            // Mostrar tab seleccionada
+            document.querySelectorAll('.tab-btn')[tabNumber - 1].classList.add('active');
+            document.getElementById('studentTab' + tabNumber).classList.add('active');
+            currentStudentTab = tabNumber;
+        }
+
+        // Cálculo de edad
+        function calculateAge() {
+            const birthDate = document.getElementById('birthDate').value;
+            if (birthDate) {
+                const birth = new Date(birthDate);
+                const today = new Date();
+                let age = today.getFullYear() - birth.getFullYear();
+                const monthDiff = today.getMonth() - birth.getMonth();
+               
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                    age--;
+                }
+               
+                document.getElementById('age').value = age + ' años';
+            }
+        }
+
+        // Cálculo de IMC
+        function calculateBMI() {
+            const height = parseFloat(document.getElementById('height').value) / 100; // convertir a metros
+            const weight = parseFloat(document.getElementById('weight').value);
+           
+            if (height && weight && height > 0) {
+                const bmi = (weight / (height * height)).toFixed(1);
+                document.getElementById('bmi').value = bmi;
+            }
+        }
+
+        // Preview de foto
+        function previewPhoto(event) {
+            const input = event.target;
+            const preview = document.getElementById('photoPreview');
+            const placeholder = document.querySelector('.photo-placeholder');
+           
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+               
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    placeholder.style.display = 'none';
+                }
+               
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Resetear formulario
+        function resetForm() {
+            document.getElementById('newStudentForm').reset();
+            document.getElementById('studentId').value = '';
+            document.getElementById('age').value = '';
+            document.getElementById('bmi').value = '';
+            document.getElementById('vaccinesUpToDate').checked = true;
+           
+            // Resetear foto
+            document.getElementById('photoPreview').style.display = 'none';
+            document.querySelector('.photo-placeholder').style.display = 'flex';
+            document.getElementById('photoInput').value = '';
+           
+            // Volver a la primera tab
+            switchStudentTab(1);
+        }
+
+        // Ver estudiante - CONECTADO AL BACKEND REAL
+        async function viewStudent(id) {
+            try {
+                const response = await fetch(`/api/students/${id}/view`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const student = result.student;
+                    
+                    const studentInfo = `
+👤 INFORMACIÓN COMPLETA DEL ESTUDIANTE:
+
+📝 NOMBRE: ${student.last_name}, ${student.first_name}
+🆔 DNI: ${student.dni}
+🎂 EDAD: ${student.age} (Nac: ${student.birth_date})
+⚧️ GÉNERO: ${student.gender}
+🏛️ NACIONALIDAD: ${student.nationality}
+📋 ESTADO: ${student.status}
+
+📞 CONTACTO:
+📍 Dirección: ${student.address}
+📱 Teléfono: ${student.phone}
+📧 Email: ${student.email}
+
+👨 INFORMACIÓN DEL PADRE:
+${student.father_names}
+📞 ${student.father_phone}
+
+👩 INFORMACIÓN DE LA MADRE:
+${student.mother_names} 
+📞 ${student.mother_phone}
+
+🚨 CONTACTO DE EMERGENCIA:
+${student.emergency_contact}
+📞 ${student.emergency_phone}
+
+🏥 INFORMACIÓN MÉDICA:
+🩸 Tipo de Sangre: ${student.blood_type}
+⚠️ Alergias: ${student.allergies}
+💊 Medicamentos: ${student.medications}
+🩺 Condiciones Médicas: ${student.medical_conditions}
+                    `;
+                    
+                    alert(studentInfo);
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al cargar información del estudiante');
+            }
+        }
+
+        // Editar estudiante - CONECTADO AL BACKEND REAL
+        async function editStudent(id) {
+            try {
+                const response = await fetch(`/api/students/${id}/edit`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const student = result.student;
+                    
+                    // Llenar formulario con datos reales del estudiante
+                    document.getElementById('studentId').value = student.id;
+                    document.getElementById('lastName').value = student.last_name || '';
+                    document.getElementById('firstName').value = student.first_name || '';
+                    document.getElementById('dni').value = student.dni || '';
+                    document.getElementById('birthDate').value = student.birth_date || '';
+                    document.getElementById('gender').value = student.gender || '';
+                    document.getElementById('nationality').value = student.nationality || '';
+                    document.getElementById('address').value = student.address || '';
+                    document.getElementById('phone').value = student.phone || '';
+                    document.getElementById('email').value = student.email || '';
+                    
+                    // Datos del padre
+                    document.getElementById('fatherNames').value = student.father_names || '';
+                    document.getElementById('fatherDni').value = student.father_dni || '';
+                    document.getElementById('fatherBirthDate').value = student.father_birth_date || '';
+                    document.getElementById('fatherPhone').value = student.father_phone || '';
+                    document.getElementById('fatherEmail').value = student.father_email || '';
+                    document.getElementById('fatherOccupation').value = student.father_occupation || '';
+                    
+                    // Datos de la madre
+                    document.getElementById('motherNames').value = student.mother_names || '';
+                    document.getElementById('motherDni').value = student.mother_dni || '';
+                    document.getElementById('motherBirthDate').value = student.mother_birth_date || '';
+                    document.getElementById('motherPhone').value = student.mother_phone || '';
+                    document.getElementById('motherEmail').value = student.mother_email || '';
+                    document.getElementById('motherOccupation').value = student.mother_occupation || '';
+                    
+                    // Contacto de emergencia
+                    document.getElementById('emergencyContact').value = student.emergency_contact || '';
+                    document.getElementById('emergencyRelationship').value = student.emergency_relationship || '';
+                    document.getElementById('emergencyPhone').value = student.emergency_phone || '';
+                    document.getElementById('emergencyAddress').value = student.emergency_address || '';
+                    
+                    // Datos médicos
+                    document.getElementById('bloodType').value = student.blood_type || '';
+                    document.getElementById('height').value = student.height || '';
+                    document.getElementById('weight').value = student.weight || '';
+                    document.getElementById('allergies').value = student.allergies || '';
+                    document.getElementById('medications').value = student.medications || '';
+                    document.getElementById('medicalConditions').value = student.medical_conditions || '';
+                    document.getElementById('activityRestrictions').value = student.activity_restrictions || '';
+                    document.getElementById('vaccinesUpToDate').checked = student.vaccines_up_to_date || true;
+                    document.getElementById('medicalObservations').value = student.medical_observations || '';
+                    
+                    // Calcular edad e IMC
+                    calculateAge();
+                    calculateBMI();
+                    
+                    // Mostrar formulario en modo edición
+                    document.getElementById('studentFormCard').style.display = 'block';
+                    document.getElementById('listaEstudiantesCard').style.display = 'none';
+                    isEditing = true;
+                    currentStudentId = id;
+                    document.getElementById('formTitle').textContent = '✏️ Editar Estudiante';
+                    document.getElementById('submitButton').textContent = '💾 Actualizar Estudiante';
+                    
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al cargar datos del estudiante para editar');
+            }
+        }
+
+        // Cargar estudiantes
+        async function loadStudents() {
+            try {
+                const response = await fetch('/api/students');
+                const students = await response.json();
+               
+                const tbody = document.getElementById('studentsTable');
+               
+                if (students.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6">No hay estudiantes registrados</td></tr>';
+                    return;
+                }
+               
+                let html = '';
+                students.forEach(student => {
+                    html += `
+                        <tr>
+                            <td><strong>${student.dni}</strong></td>
+                            <td><strong>${student.last_name}, ${student.first_name}</strong></td>
+                            <td>${student.age} años</td>
+                            <td>${student.phone}</td>
+                            <td><span style="color: green;">✅ ${student.status}</span></td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="viewStudent(${student.id})">👀 Ver</button>
+                                <button class="btn btn-outline btn-sm" onclick="editStudent(${student.id})">✏️ Editar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+               
+                tbody.innerHTML = html;
+            } catch (error) {
+                document.getElementById('studentsTable').innerHTML = '<tr><td colspan="6">Error al cargar estudiantes</td></tr>';
+            }
+        }
+
+        // Guardar estudiante (crear o actualizar)
+        document.getElementById('newStudentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+           
+            const studentId = document.getElementById('studentId').value;
+            const studentData = {
+                // Información Personal
+                last_name: document.getElementById('lastName').value,
+                first_name: document.getElementById('firstName').value,
+                dni: document.getElementById('dni').value,
+                birth_date: document.getElementById('birthDate').value,
+                gender: document.getElementById('gender').value,
+                nationality: document.getElementById('nationality').value,
+               
+                // Información de Contacto
+                address: document.getElementById('address').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+               
+                // Información del Padre
+                father_names: document.getElementById('fatherNames').value,
+                father_dni: document.getElementById('fatherDni').value,
+                father_birth_date: document.getElementById('fatherBirthDate').value,
+                father_phone: document.getElementById('fatherPhone').value,
+                father_email: document.getElementById('fatherEmail').value,
+                father_occupation: document.getElementById('fatherOccupation').value,
+               
+                // Información de la Madre
+                mother_names: document.getElementById('motherNames').value,
+                mother_dni: document.getElementById('motherDni').value,
+                mother_birth_date: document.getElementById('motherBirthDate').value,
+                mother_phone: document.getElementById('motherPhone').value,
+                mother_email: document.getElementById('motherEmail').value,
+                mother_occupation: document.getElementById('motherOccupation').value,
+               
+                // Contacto de Emergencia
+                emergency_contact: document.getElementById('emergencyContact').value,
+                emergency_relationship: document.getElementById('emergencyRelationship').value,
+                emergency_phone: document.getElementById('emergencyPhone').value,
+                emergency_address: document.getElementById('emergencyAddress').value,
+               
+                // Datos Médicos
+                blood_type: document.getElementById('bloodType').value,
+                height: document.getElementById('height').value ? parseFloat(document.getElementById('height').value) : null,
+                weight: document.getElementById('weight').value ? parseFloat(document.getElementById('weight').value) : null,
+                allergies: document.getElementById('allergies').value,
+                medications: document.getElementById('medications').value,
+                medical_conditions: document.getElementById('medicalConditions').value,
+                activity_restrictions: document.getElementById('activityRestrictions').value,
+                vaccines_up_to_date: document.getElementById('vaccinesUpToDate').checked,
+                medical_observations: document.getElementById('medicalObservations').value
+            };
+           
+            try {
+                let url, method;
+                
+                if (isEditing && studentId) {
+                    // Modo edición - usar la nueva API específica
+                    url = `/api/students/${studentId}/update`;
+                    method = 'PUT';
+                } else {
+                    // Modo creación - usar API existente
+                    url = '/api/students';
+                    method = 'POST';
+                }
+               
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(studentData)
+                });
+               
+                const result = await response.json();
+               
+                if (result.success) {
+                    alert(`✅ Estudiante ${isEditing ? 'actualizado' : 'registrado'} correctamente`);
+                    hideStudentForm();
+                    loadStudents();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error al ' + (isEditing ? 'actualizar' : 'registrar') + ' estudiante: ' + error.message);
+            }
+        });
+
+        // Cargar estudiantes al iniciar
+        loadStudents();
+    </script>
+
+    <style>
+        /* ESTILOS ESPECÍFICOS PARA ESTUDIANTES - No afectan almacén */
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            font-weight: 500;
+            color: #64748b;
+            transition: all 0.3s ease;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .tab-btn:hover {
+            color: #3b82f6;
+            background: #f8fafc;
+        }
+        .tab-btn.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+            background: #f0f9ff;
+        }
+        .tab-pane-estudiante {
+            display: none;
+        }
+        .tab-pane-estudiante.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .tab-content-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</body>
+</html>

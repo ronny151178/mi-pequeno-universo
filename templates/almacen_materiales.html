@@ -1,0 +1,393 @@
+<div class="tab-header">
+    <h2>📦 Materiales del Aula</h2>
+    <p>Control de entradas y salidas de materiales proporcionados por el colegio</p>
+</div>
+
+<!-- Gestión de Materiales -->
+<div class="form-section">
+    <h3>➕ Registrar Nuevo Material</h3>
+    <form class="config-form" id="materialForm">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="materialNombre">Nombre del Material</label>
+                <input type="text" id="materialNombre" class="form-control" placeholder="Ej: Papel bond, Cartulinas, etc." required>
+            </div>
+           
+            <div class="form-group">
+                <label for="materialCategoria">Categoría</label>
+                <select id="materialCategoria" class="form-control" required>
+                    <option value="">Seleccionar categoría</option>
+                    <option value="papeleria">Papelería</option>
+                    <option value="limpieza">Limpieza</option>
+                    <option value="oficina">Oficina</option>
+                    <option value="arte">Materiales de Arte</option>
+                    <option value="educativo">Material Educativo</option>
+                    <option value="otros">Otros</option>
+                </select>
+            </div>
+        </div>
+       
+        <div class="form-row">
+            <div class="form-group">
+                <label for="stockActual">Stock Actual</label>
+                <input type="number" id="stockActual" class="form-control" placeholder="Cantidad actual" min="0" required>
+            </div>
+           
+            <div class="form-group">
+                <label for="stockMinimo">Stock Mínimo</label>
+                <input type="number" id="stockMinimo" class="form-control" placeholder="Mínimo requerido" min="0" required>
+            </div>
+        </div>
+       
+        <div class="form-row">
+            <div class="form-group">
+                <label for="unidadMedida">Unidad de Medida</label>
+                <select id="unidadMedida" class="form-control" required>
+                    <option value="unidades">Unidades</option>
+                    <option value="paquetes">Paquetes</option>
+                    <option value="cajas">Cajas</option>
+                    <option value="litros">Litros</option>
+                    <option value="kilogramos">Kilogramos</option>
+                    <option value="metros">Metros</option>
+                </select>
+            </div>
+           
+            <div class="form-group">
+                <label for="proveedor">Proveedor</label>
+                <input type="text" id="proveedor" class="form-control" placeholder="Ej: Distribuidora XYZ">
+            </div>
+        </div>
+       
+        <div class="form-group">
+            <label for="materialDescripcion">Descripción</label>
+            <textarea id="materialDescripcion" class="form-control" placeholder="Descripción detallada del material..." rows="3"></textarea>
+        </div>
+       
+        <div class="form-group">
+            <label for="ubicacion">Ubicación/Almacén</label>
+            <input type="text" id="ubicacion" class="form-control" placeholder="Ej: Estante A, Caja 3, etc.">
+        </div>
+       
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">💾 Guardar Material</button>
+        </div>
+    </form>
+</div>
+
+<!-- Lista de Materiales -->
+<div class="content-section">
+    <h3>📋 Inventario de Materiales</h3>
+    <div class="items-list" id="listaMateriales">
+        <div class="empty-state">
+            <div class="icon">📦</div>
+            <p>No hay materiales registrados</p>
+        </div>
+    </div>
+</div>
+
+<!-- Movimientos de Materiales -->
+<div class="content-section">
+    <h3>🔄 Movimientos de Stock</h3>
+    <div class="form-group">
+        <label for="materialMovimientosSelect">Seleccionar Material para ver movimientos</label>
+        <select id="materialMovimientosSelect" class="form-control" onchange="cargarMovimientos()">
+            <option value="">Seleccionar material</option>
+        </select>
+    </div>
+   
+    <div id="seccionMovimientos" style="display: none;">
+        <div class="form-section">
+            <h4>📥 Registrar Nuevo Movimiento</h4>
+            <form class="config-form" id="movimientoForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="tipoMovimiento">Tipo de Movimiento</label>
+                        <select id="tipoMovimiento" class="form-control" required>
+                            <option value="">Seleccionar tipo</option>
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="salida">Salida (-)</option>
+                            <option value="ajuste">Ajuste de Stock</option>
+                        </select>
+                    </div>
+                   
+                    <div class="form-group">
+                        <label for="cantidadMovimiento">Cantidad</label>
+                        <input type="number" id="cantidadMovimiento" class="form-control" placeholder="Cantidad" min="1" required>
+                    </div>
+                </div>
+               
+                <div class="form-group">
+                    <label for="motivoMovimiento">Motivo</label>
+                    <input type="text" id="motivoMovimiento" class="form-control" placeholder="Ej: Compra, Uso en clase, Donación, etc." required>
+                </div>
+               
+                <div class="form-group">
+                    <label for="responsableMovimiento">Responsable</label>
+                    <input type="text" id="responsableMovimiento" class="form-control" placeholder="Persona responsable del movimiento">
+                </div>
+               
+                <div class="form-group">
+                    <label for="observacionesMovimiento">Observaciones</label>
+                    <textarea id="observacionesMovimiento" class="form-control" placeholder="Observaciones adicionales..." rows="2"></textarea>
+                </div>
+               
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">📝 Registrar Movimiento</button>
+                </div>
+            </form>
+        </div>
+       
+        <div class="content-section">
+            <h4>📊 Historial de Movimientos</h4>
+            <div class="items-list" id="historialMovimientos">
+                <div class="empty-state">
+                    <div class="icon">📋</div>
+                    <p>No hay movimientos registrados</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Cargar materiales
+    async function cargarMateriales() {
+        try {
+            const response = await fetch('/api/almacen/materiales');
+            const materiales = await response.json();
+           
+            const listaMateriales = document.getElementById('listaMateriales');
+            const selectMovimientos = document.getElementById('materialMovimientosSelect');
+           
+            // Limpiar selects
+            selectMovimientos.innerHTML = '<option value="">Seleccionar material</option>';
+           
+            if (materiales.length === 0) {
+                listaMateriales.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📦</div>
+                        <p>No hay materiales registrados</p>
+                    </div>
+                `;
+                return;
+            }
+           
+            let html = '';
+            materiales.forEach(material => {
+                // Determinar clase de estado
+                let estadoClass = 'stock-good';
+                let estadoText = '✅ Stock OK';
+               
+                if (material.estado === 'alerta') {
+                    estadoClass = 'stock-warning';
+                    estadoText = '⚠️ Stock Bajo';
+                } else if (material.estado === 'agotado') {
+                    estadoClass = 'stock-alert';
+                    estadoText = '❌ Agotado';
+                }
+               
+                html += `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <h4>${material.nombre}</h4>
+                            <p>Categoría: ${material.categoria} | Ubicación: ${material.ubicacion || 'No especificada'}</p>
+                            <div class="stock-info">
+                                <span>Stock: ${material.stock_actual} ${material.unidad_medida}</span>
+                                <span class="${estadoClass}">${estadoText}</span>
+                            </div>
+                            <small>Mínimo: ${material.stock_minimo} ${material.unidad_medida} | Proveedor: ${material.proveedor || 'No especificado'}</small>
+                        </div>
+                        <div class="list-item-actions">
+                            <button class="btn btn-sm btn-outline" onclick="editarMaterial(${material.id})">✏️ Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="eliminarMaterial(${material.id})">🗑️ Eliminar</button>
+                        </div>
+                    </div>
+                `;
+               
+                // Agregar al select de movimientos
+                const option = new Option(material.nombre, material.id);
+                selectMovimientos.add(option);
+            });
+           
+            listaMateriales.innerHTML = html;
+        } catch (error) {
+            console.log('Error cargando materiales:', error);
+        }
+    }
+   
+    // Guardar material
+    document.getElementById('materialForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+       
+        const materialData = {
+            nombre: document.getElementById('materialNombre').value,
+            categoria: document.getElementById('materialCategoria').value,
+            descripcion: document.getElementById('materialDescripcion').value,
+            stock_actual: parseInt(document.getElementById('stockActual').value),
+            stock_minimo: parseInt(document.getElementById('stockMinimo').value),
+            unidad_medida: document.getElementById('unidadMedida').value,
+            proveedor: document.getElementById('proveedor').value,
+            ubicacion: document.getElementById('ubicacion').value
+        };
+       
+        try {
+            const response = await fetch('/api/almacen/materiales', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(materialData)
+            });
+           
+            const result = await response.json();
+           
+            if (result.success) {
+                alert('✅ Material guardado correctamente');
+                cargarMateriales();
+                document.getElementById('materialForm').reset();
+            } else {
+                alert('❌ ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error al guardar material');
+        }
+    });
+   
+    // Cargar movimientos
+    async function cargarMovimientos() {
+        const materialId = document.getElementById('materialMovimientosSelect').value;
+        if (!materialId) {
+            document.getElementById('seccionMovimientos').style.display = 'none';
+            return;
+        }
+       
+        document.getElementById('seccionMovimientos').style.display = 'block';
+       
+        try {
+            const response = await fetch(`/api/almacen/materiales/${materialId}/movimientos`);
+            const movimientos = await response.json();
+           
+            const historialMovimientos = document.getElementById('historialMovimientos');
+           
+            if (movimientos.length === 0) {
+                historialMovimientos.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📋</div>
+                        <p>No hay movimientos registrados</p>
+                    </div>
+                `;
+                return;
+            }
+           
+            let html = '';
+            movimientos.forEach(mov => {
+                const tipoIcon = mov.tipo === 'entrada' ? '📥' : mov.tipo === 'salida' ? '📤' : '🔧';
+                const tipoClass = mov.tipo === 'entrada' ? 'text-success' : mov.tipo === 'salida' ? 'text-danger' : 'text-warning';
+               
+                html += `
+                    <div class="list-item">
+                        <div class="list-item-content">
+                            <h4><span class="${tipoClass}">${tipoIcon} ${mov.tipo.toUpperCase()}</span></h4>
+                            <p>Cantidad: ${mov.cantidad} | Motivo: ${mov.motivo}</p>
+                            <small>Fecha: ${mov.fecha_movimiento} | Responsable: ${mov.responsable || 'No especificado'}</small>
+                            ${mov.observaciones ? `<p><em>${mov.observaciones}</em></p>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+           
+            historialMovimientos.innerHTML = html;
+        } catch (error) {
+            console.log('Error cargando movimientos:', error);
+        }
+    }
+   
+    // Registrar movimiento
+    document.getElementById('movimientoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+       
+        const materialId = document.getElementById('materialMovimientosSelect').value;
+        if (!materialId) {
+            alert('❌ Debes seleccionar un material');
+            return;
+        }
+       
+        const movimientoData = {
+            tipo: document.getElementById('tipoMovimiento').value,
+            cantidad: parseInt(document.getElementById('cantidadMovimiento').value),
+            motivo: document.getElementById('motivoMovimiento').value,
+            responsable: document.getElementById('responsableMovimiento').value,
+            observaciones: document.getElementById('observacionesMovimiento').value
+        };
+       
+        try {
+            const response = await fetch(`/api/almacen/materiales/${materialId}/movimientos`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(movimientoData)
+            });
+           
+            const result = await response.json();
+           
+            if (result.success) {
+                alert('✅ Movimiento registrado correctamente');
+                document.getElementById('movimientoForm').reset();
+                cargarMovimientos();
+                cargarMateriales(); // Actualizar lista de materiales
+            } else {
+                alert('❌ ' + result.error);
+            }
+        } catch (error) {
+            alert('❌ Error al registrar movimiento');
+        }
+    });
+   
+    // Funciones de edición y eliminación
+    async function editarMaterial(id) {
+        alert('Funcionalidad de edición en desarrollo para material ID: ' + id);
+    }
+   
+    async function eliminarMaterial(id) {
+        if (confirm('¿Estás seguro de eliminar este material?')) {
+            try {
+                const response = await fetch(`/api/almacen/materiales/${id}`, {
+                    method: 'DELETE'
+                });
+               
+                const result = await response.json();
+               
+                if (result.success) {
+                    alert('✅ Material eliminado correctamente');
+                    cargarMateriales();
+                } else {
+                    alert('❌ ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error al eliminar material');
+            }
+        }
+    }
+   
+    // Inicializar
+    cargarMateriales();
+</script>
+
+<style>
+.stock-warning {
+    color: #f59e0b;
+    font-weight: bold;
+}
+.text-success {
+    color: #10b981;
+}
+.text-danger {
+    color: #ef4444;
+}
+.text-warning {
+    color: #f59e0b;
+}
+.stock-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px 0;
+}
+</style>

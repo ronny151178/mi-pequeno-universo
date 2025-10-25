@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+    
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard" class="active">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+        
+        <div class="content">
+            <div class="card">
+                <h1>Configuración del Sistema</h1>
+                <p>Completa estos pasos para configurar tu institución educativa</p>
+                
+                <div class="setup-wizard">
+                    <div class="wizard-step" id="step-year">
+                        <div class="step-number">1</div>
+                        <h3>📅 Año Escolar</h3>
+                        <p>Configura el período académico</p>
+                        <a href="/config-año" class="btn btn-primary">Configurar</a>
+                    </div>
+                    
+                    <div class="wizard-step" id="step-classrooms">
+                        <div class="step-number">2</div>
+                        <h3>🏫 Aulas</h3>
+                        <p>Crear grados y secciones</p>
+                        <a href="/config-aulas" class="btn btn-outline">Configurar</a>
+                    </div>
+                    
+                    <div class="wizard-step" id="step-concepts">
+                        <div class="step-number">3</div>
+                        <h3>💰 Conceptos</h3>
+                        <p>Definir costos y pagos</p>
+                        <a href="/config-conceptos" class="btn btn-outline">Configurar</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Resumen General</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Años Escolares</h3>
+                        <div class="number" id="total-years">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Aulas Configuradas</h3>
+                        <div class="number" id="total-classrooms">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Conceptos de Pago</h3>
+                        <div class="number" id="total-concepts">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Estudiantes</h3>
+                        <div class="number" id="total-students">0</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="setup-complete" style="display: none;">
+                <div class="card" style="background: #f0fdf4; border-color: var(--success);">
+                    <h2 style="color: var(--success);">✅ Configuración Completa</h2>
+                    <p>Tu sistema está listo para gestionar estudiantes y pagos.</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                        <a href="/estudiantes" class="btn btn-success">👥 Gestionar Estudiantes</a>
+                        <a href="/matriculas" class="btn btn-primary">🎓 Realizar Matrículas</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/dashboard-stats');
+                const stats = await response.json();
+                
+                document.getElementById('total-years').textContent = stats.school_years;
+                document.getElementById('total-classrooms').textContent = stats.classrooms;
+                document.getElementById('total-concepts').textContent = stats.payment_concepts;
+                document.getElementById('total-students').textContent = stats.students;
+                
+                // Actualizar estados del wizard
+                if (stats.school_years > 0) {
+                    document.getElementById('step-year').classList.add('completed');
+                    document.getElementById('step-classrooms').classList.add('active');
+                }
+                
+                if (stats.classrooms > 0) {
+                    document.getElementById('step-classrooms').classList.add('completed');
+                    document.getElementById('step-concepts').classList.add('active');
+                }
+                
+                if (stats.payment_concepts > 0) {
+                    document.getElementById('step-concepts').classList.add('completed');
+                }
+                
+                // Mostrar mensaje de configuración completa
+                if (stats.setup_complete) {
+                    document.getElementById('setup-complete').style.display = 'block';
+                }
+                
+            } catch (error) {
+                console.log('Error cargando estadísticas:', error);
+            }
+        }
+        
+        loadDashboardStats();
+    </script>
+</body>
+</html>

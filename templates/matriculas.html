@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matrículas - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo-img">
+            <span>Mi Pequeño Universo</span>
+        </div>
+        <div class="user-menu">Administrador 👤</div>
+    </div>
+    
+    <div class="main-grid">
+        <div class="sidebar">
+            <a href="/dashboard">📊 Dashboard</a>
+            <a href="/config-año">📅 Año Escolar</a>
+            <a href="/config-aulas">🏫 Aulas</a>
+            <a href="/config-conceptos">💰 Conceptos</a>
+            <a href="/estudiantes">👥 Estudiantes</a>
+            <a href="/matriculas" class="active">🎓 Matrículas</a>
+            <a href="/pagos">💳 Pagos</a>
+            <a href="/planes-pago">📅 Planes de Pago</a>
+            <a href="/almacen">📦 Almacén</a>
+            <a href="/reportes">📊 Reportes</a>
+            <a href="/api/logout">🚪 Salir</a>
+        </div>
+        
+        <div class="content">
+            <!-- FORMULARIO DE MATRÍCULA -->
+            <div class="card" id="enrollmentFormCard">
+                <h2>🎓 <span id="enrollmentFormTitle">Nueva Matrícula</span></h2>
+                <form id="enrollmentForm">
+                    <input type="hidden" id="enrollmentId" value="">
+                    
+                    <div class="form-group">
+                        <label for="studentSelect">Estudiante *</label>
+                        <select id="studentSelect" required>
+                            <option value="">Seleccionar estudiante...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="classroomSelect">Aula *</label>
+                        <select id="classroomSelect" required>
+                            <option value="">Seleccionar aula...</option>
+                        </select>
+                        <div class="form-text" id="classroomInfo"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="enrollmentDate">Fecha de Matrícula *</label>
+                        <input type="date" id="enrollmentDate" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-outline" onclick="cancelEdit()" id="cancelButton" style="display: none;">❌ Cancelar</button>
+                        <button type="submit" class="btn btn-success" id="submitEnrollmentButton">✅ Registrar Matrícula</button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- LISTA DE MATRÍCULAS -->
+            <div class="card">
+                <h2>📋 Matrículas Activas</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Estudiante</th>
+                                <th>DNI</th>
+                                <th>Aula</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="enrollmentsTable">
+                            <!-- Las matrículas se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        let isEditingEnrollment = false;
+        let currentEnrollmentId = null;
+
+        // Cargar estudiantes no matriculados
+        async function loadUnenrolledStudents() {
+            try {
+                const response = await fetch('/api/students/unenrolled');
+                const students = await response.json();
+                
+                const select = document.getElementById('studentSelect');
+                select.innerHTML = '<option value="">Seleccionar estudiante...</option>';
+                
+                students.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.id;
+                    option.textContent = `${student.first_name} ${student.last_name} (DNI: ${student.dni}) - ${student.age} años`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando estudiantes:', error);
+            }
+        }
+
+        // Cargar aulas disponibles
+        async function loadAvailableClassrooms() {
+            try {
+                const response = await fetch('/api/classrooms/available');
+                const classrooms = await response.json();
+                
+                const select = document.getElementById('classroomSelect');
+                select.innerHTML = '<option value="">Seleccionar aula...</option>';
+                
+                classrooms.forEach(classroom => {
+                    if (classroom.available_spots > 0) {
+                        const option = document.createElement('option');
+                        option.value = classroom.id;
+                        option.textContent = `${classroom.name} (${classroom.age_range}) - ${classroom.available_spots} cupos disponibles`;
+                        select.appendChild(option);
+                    }
+                });
+            } catch (error) {
+                console.error('Error cargando aulas:', error);
+            }
+        }
+
+        // Cargar todas las aulas (para edición)
+        async function loadAllClassrooms() {
+            try {
+                const response = await fetch('/api/classrooms');
+                const classrooms = await response.json();
+                
+                const select = document.getElementById('classroomSelect');
+                select.innerHTML = '<option value="">Seleccionar aula...</option>';
+                
+                classrooms.forEach(classroom => {
+                    const option = document.createElement('option');
+                    option.value = classroom.id;
+                    option.textContent = `${classroom.name} (${classroom.age_range})`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando aulas:', error);
+            }
+        }
+
+        // Cargar matrículas
+async function loadEnrollments() {
+    try {
+        const response = await fetch('/api/enrollments');
+        const enrollments = await response.json();
+        
+        const tbody = document.getElementById('enrollmentsTable');
+        
+        // FILTRAR SOLO MATRÍCULAS ACTIVAS
+        const activeEnrollments = enrollments.filter(e => e.status === 'active');
+        
+        if (activeEnrollments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No hay matrículas activas</td></tr>';
+            return;
+        }
+        
+        let html = '';
+        activeEnrollments.forEach(enrollment => {
+            // Formatear fecha directamente
+            const fecha = enrollment.enrollment_date.split('-').reverse().join('/');
+            
+            html += `
+                <tr>
+                    <td><strong>${enrollment.student_name}</strong></td>
+                    <td>${enrollment.student_dni}</td>
+                    <td>${enrollment.classroom_name}</td>
+                    <td>${fecha}</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="viewEnrollment(${enrollment.id})">👀 Ver</button>
+                        <button class="btn btn-outline btn-sm" onclick="editEnrollment(${enrollment.id})">✏️ Editar</button>
+                        <button class="btn btn-danger btn-sm" onclick="cancelEnrollment(${enrollment.id})">❌ Anular</button>
+                        <button class="btn btn-sm" onclick="generateCertificate(${enrollment.id})">🖨️ Constancia</button>
+                    </td>
+                </tr>
+            `;
+        });
+        
+        tbody.innerHTML = html;
+    } catch (error) {
+        console.error('Error cargando matrículas:', error);
+        document.getElementById('enrollmentsTable').innerHTML = 
+            '<tr><td colspan="5">Error al cargar matrículas</td></tr>';
+    }
+}
+
+        // Ver matrícula
+        async function viewEnrollment(enrollmentId) {
+            try {
+                const response = await fetch(`/api/enrollments/${enrollmentId}/details`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const enrollment = result.enrollment;
+                    const fecha = enrollment.enrollment_date.split('-').reverse().join('/');
+                    
+                    const enrollmentInfo = `
+🎓 INFORMACIÓN DE MATRÍCULA:
+
+👤 ESTUDIANTE: ${enrollment.student_name}
+🆔 DNI: ${enrollment.student_dni}
+🏫 AULA: ${enrollment.classroom_name}
+📅 FECHA MATRÍCULA: ${fecha}
+📋 ESTADO: ${enrollment.status}
+                    `;
+                    
+                    alert(enrollmentInfo);
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('❌ Error al cargar información de la matrícula');
+            }
+        }
+
+        // Editar matrícula
+        // Editar matrícula
+async function editEnrollment(enrollmentId) {
+    try {
+        const response = await fetch(`/api/enrollments/${enrollmentId}/edit`);
+        const result = await response.json();
+        
+        if (result.success) {
+            const enrollment = result.enrollment;
+            
+            // Llenar formulario con datos de la matrícula
+            document.getElementById('enrollmentId').value = enrollment.id;
+            document.getElementById('enrollmentDate').value = enrollment.enrollment_date;
+            
+            // MOSTRAR NOMBRE DEL ALUMNO (SOLO LECTURA)
+            document.getElementById('studentSelect').innerHTML = `<option value="${enrollment.student_id}" selected>${enrollment.student_name} (EDITANDO)</option>`;
+            document.getElementById('studentSelect').disabled = true;
+            
+            // Cambiar a modo edición
+            isEditingEnrollment = true;
+            currentEnrollmentId = enrollmentId;
+            document.getElementById('enrollmentFormTitle').textContent = '✏️ Editar Matrícula';
+            document.getElementById('submitEnrollmentButton').textContent = '💾 Actualizar Matrícula';
+            document.getElementById('cancelButton').style.display = 'inline-block';
+            
+            // Cargar todas las aulas (no solo disponibles)
+            await loadAllClassrooms();
+            
+            // Seleccionar el aula actual
+            setTimeout(() => {
+                document.getElementById('classroomSelect').value = enrollment.classroom_id;
+            }, 100);
+            
+        } else {
+            alert('❌ Error: ' + result.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error al cargar datos de la matrícula para editar');
+    }
+}
+
+        // Cancelar edición
+function cancelEdit() {
+    isEditingEnrollment = false;
+    currentEnrollmentId = null;
+    document.getElementById('enrollmentFormTitle').textContent = '🎓 Nueva Matrícula';
+    document.getElementById('submitEnrollmentButton').textContent = '✅ Registrar Matrícula';
+    document.getElementById('cancelButton').style.display = 'none';
+    document.getElementById('enrollmentForm').reset();
+    
+    // HABILITAR SELECT DE ESTUDIANTES NUEVAMENTE
+    document.getElementById('studentSelect').disabled = false;
+    
+    loadUnenrolledStudents();
+    loadAvailableClassrooms();
+}
+
+        // Anular matrícula
+        async function cancelEnrollment(enrollmentId) {
+            if (confirm('¿Estás seguro de que deseas anular esta matrícula? Esta acción no se puede deshacer.')) {
+                try {
+                    const response = await fetch(`/api/enrollments/${enrollmentId}/cancel`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            status: 'inactive'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('✅ Matrícula anulada correctamente');
+                        loadEnrollments();
+                        loadUnenrolledStudents();
+                        loadAvailableClassrooms();
+                    } else {
+                        alert('❌ Error: ' + result.error);
+                    }
+                } catch (error) {
+                    alert('❌ Error al anular matrícula');
+                }
+            }
+        }
+
+        // Generar constancia (ya existente)
+        async function generateCertificate(enrollmentId) {
+            try {
+                const response = await fetch(`/api/enrollments/${enrollmentId}/certificate`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    const cert = result.certificate;
+                    
+                    const params = new URLSearchParams({
+                        student_name: cert.student_name,
+                        student_dni: cert.student_dni,
+                        student_birth_date: cert.student_birth_date,
+                        classroom_name: cert.classroom_name,
+                        classroom_age_range: cert.classroom_age_range,
+                        enrollment_date: cert.enrollment_date,
+                        enrollment_id: cert.enrollment_id,
+                        current_date: cert.current_date
+                    });
+                    
+                    window.open(
+                        `/certificado-matricula?${params}`,
+                        '_blank',
+                        'width=900,height=700,scrollbars=yes'
+                    );
+                    
+                } else {
+                    alert('Error al generar constancia: ' + result.error);
+                }
+            } catch (error) {
+                alert('Error al generar la constancia');
+            }
+        }
+
+        // Enviar formulario (crear o editar)
+        document.getElementById('enrollmentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('studentSelect').value;
+            const classroomId = document.getElementById('classroomSelect').value;
+            const enrollmentDate = document.getElementById('enrollmentDate').value;
+            const enrollmentId = document.getElementById('enrollmentId').value;
+
+            if (!classroomId || !enrollmentDate) {
+                alert('Por favor complete todos los campos requeridos');
+                return;
+            }
+
+            try {
+                let url, method, body;
+
+                if (isEditingEnrollment && enrollmentId) {
+                    // Modo edición
+                    url = `/api/enrollments/${enrollmentId}/update`;
+                    method = 'PUT';
+                    body = {
+                        classroom_id: parseInt(classroomId),
+                        enrollment_date: enrollmentDate
+                    };
+                } else {
+                    // Modo creación
+                    if (!studentId) {
+                        alert('Por favor seleccione un estudiante');
+                        return;
+                    }
+                    url = '/api/enrollments';
+                    method = 'POST';
+                    body = {
+                        student_id: parseInt(studentId),
+                        classroom_id: parseInt(classroomId),
+                        enrollment_date: enrollmentDate
+                    };
+                }
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ Matrícula ${isEditingEnrollment ? 'actualizada' : 'registrada'} exitosamente`);
+                    cancelEdit(); // Resetear formulario
+                    loadEnrollments();
+                } else {
+                    alert('❌ Error: ' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Error de conexión: ' + error.message);
+            }
+        });
+
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const localDate = today.toISOString().split('T')[0];
+            document.getElementById('enrollmentDate').valueAsDate = new Date();
+            loadUnenrolledStudents();
+            loadAvailableClassrooms();
+            loadEnrollments();
+        });
+
+        // Hacer funciones globales
+        window.viewEnrollment = viewEnrollment;
+        window.editEnrollment = editEnrollment;
+        window.cancelEnrollment = cancelEnrollment;
+        window.generateCertificate = generateCertificate;
+        window.cancelEdit = cancelEdit;
+    </script>
+</body>
+</html>

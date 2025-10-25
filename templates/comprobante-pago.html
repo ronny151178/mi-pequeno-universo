@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Pago - Mi Pequeño Universo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="certificate-container">
+        <div class="header">
+            <h1>MI PEQUEÑO UNIVERSO</h1>
+            <h2>Comprobante de Pago</h2>
+        </div>
+        
+        <div class="content">
+            <div class="receipt-info">
+                <div class="info-item">
+                    <strong>Número de Recibo:</strong> 
+                    <span id="receiptNumber"></span>
+                </div>
+                <div class="info-item">
+                    <strong>Fecha de Emisión:</strong> 
+                    <span id="currentDate"></span>
+                </div>
+            </div>
+            
+            <div class="student-info">
+                <div class="info-item">
+                    <strong>Estudiante:</strong> 
+                    <span id="studentName"></span>
+                </div>
+                <div class="info-item">
+                    <strong>DNI:</strong> 
+                    <span id="studentDni"></span>
+                </div>
+            </div>
+            
+            <div class="payment-details">
+                <h3>Detalles del Pago</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <strong>Concepto:</strong> 
+                        <span id="conceptName"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Monto:</strong> 
+                        <span id="amount"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Fecha de Pago:</strong> 
+                        <span id="paymentDate"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Fecha de Vencimiento:</strong> 
+                        <span id="dueDate"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Estado:</strong> 
+                        <span id="status"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer">
+                <p><strong>¡Gracias por su pago!</strong></p>
+                <p>Este comprobante es válido como constancia de pago.</p>
+            </div>
+        </div>
+        
+        <div class="no-print" style="text-align: center; margin-top: 20px;">
+            <button onclick="window.print()" class="btn btn-primary">
+                🖨️ Imprimir Comprobante
+            </button>
+            <button onclick="window.close()" class="btn btn-secondary">
+                ❌ Cerrar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Cargar datos desde los parámetros URL
+        function loadReceiptData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            document.getElementById('receiptNumber').textContent = urlParams.get('receipt_number') || 'N/A';
+            document.getElementById('currentDate').textContent = urlParams.get('current_date') || 'N/A';
+            document.getElementById('studentName').textContent = urlParams.get('student_name') || 'N/A';
+            document.getElementById('studentDni').textContent = urlParams.get('student_dni') || 'N/A';
+            document.getElementById('conceptName').textContent = urlParams.get('concept_name') || 'N/A';
+            document.getElementById('amount').textContent = 'S/. ' + (urlParams.get('amount') || '0');
+            document.getElementById('paymentDate').textContent = urlParams.get('payment_date')?.split('-').reverse().join('/') || 'N/A';
+            document.getElementById('dueDate').textContent = urlParams.get('due_date')?.split('-').reverse().join('/') || 'N/A';
+            document.getElementById('status').textContent = urlParams.get('status') || 'N/A';
+        }
+
+        document.addEventListener('DOMContentLoaded', loadReceiptData);
+    </script>
+</body>
+</html>
